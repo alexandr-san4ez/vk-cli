@@ -21,17 +21,26 @@ class Messages(FeatureInterface):
 	def render(self, messages):
 		last_msg_author = None
 		msg_readed = list()
-		column_width = get_terminal_size().columns
+		column_width = get_terminal_size().columns - 10
+		out = self.common.console.write
 		for msg in messages[::-1]:
 			# печаем имя пользователя, если мы в беседе и это входящее сообщение
 			# дважды подряд имя пользователя не печатаем
 			if not msg.out and 'chat_id' in msg and last_msg_author != msg.from_id:
 				last_msg_author = msg.from_id
-				self.common.console.write(self.common.users[msg.from_id].header())
+				out(self.common.users[msg.from_id].header())
 
 			align = '>' if msg.out else '<'
 			for line in msg.body.split('\n'):
-				self.common.console.write(" "*5, "{0:{1}{2}}".format(line, align, column_width - 10))
+				out(" "*5, "{0:{1}{2}}".format(line, align, column_width))
+			
+			# если есть прикрепленные файлы
+			if msg.get('attachments'):
+				out(" "*5, "{0:{1}{2}}\n".format('<attachments>', align, column_width))
+
+			# или пересылаемые сообщения
+			if msg.get('fwd_messages'):
+				out(" "*5, "{0:{1}{2}}\n".format('<forwarded messages>', align, column_width))
 
 			# запоминаем ID's сообщ. которые входящие и не прочитаные
 			if not msg.out and not msg.read_state:
